@@ -1,6 +1,6 @@
 # nbc_wallet
 
-A new Flutter project.
+Flutter Wallet For NBC.
 
 ## Getting Started
 
