@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:nbc_wallet/pages/asset/recordpage.dart';
+import 'package:nbc_wallet/pages/asset/transferpage.dart';
+import 'package:nbc_wallet/pages/tabs.dart';
 
-final _routes = {};
+final _routes = {
+  '/': (context) => Tabs(),
+  '/assetRecordPage':(context)=>AssetRecordPage(),
+  '/transferPage':(context)=>TransferPage(),
+};
 
 var onGenerateRoute = (RouteSettings settings) {
   String _routeName = settings.name;
@@ -13,9 +20,10 @@ var onGenerateRoute = (RouteSettings settings) {
             pageControllerBuilder(context, arguments: settings.arguments),
       );
       return route;
+    } else {
+      final Route route = MaterialPageRoute(
+          builder: (context) => pageControllerBuilder(context));
+      return route;
     }
-  } else {
-    final Route route =
-        MaterialPageRoute(builder: (context) => pageControllerBuilder(context));
   }
 };
