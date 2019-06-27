@@ -4,13 +4,21 @@ import 'package:http/http.dart';
 import 'dart:convert';
 import './model/jsonEntity.dart';
 
-void main() {
-  // TxnSuccessInfo txnSuccessInfo =
-  //     TxnSuccessInfo(confirm: 2, height: 56745, idx: 1);
-  // var t=jsonEncode(txnSuccessInfo);
-  TxnSuccessInfo info =
-      TxnSuccessInfo.fromJson({"height": 53212, "confirm": 0, "idx": 1});
-  print(info);
+String main() {
+  int a = 0;
+
+
+  while (true) {
+    print('a:${a}');
+    a++;
+    if (a >= 2) {
+      // return '123';
+      break;
+      // return;
+    }
+    sleep(Duration(seconds: 3));
+  }
+  print('finished');
 }
 
 Future<Response> test01() async {

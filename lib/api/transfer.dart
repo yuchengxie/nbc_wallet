@@ -38,10 +38,10 @@ List<int> hash_;
 bool isQuery = true;
 
 void main() {
-  query_sheet('', '');
+  // query_sheet('', '');
 }
 
-void query_sheet(pay_to, from_uocks) async {
+Future<String> transfer(pay_to, from_uocks) async {
   int ext_in = 0;
   bool submit = true;
   int scan_count = 0;
@@ -52,7 +52,7 @@ void query_sheet(pay_to, from_uocks) async {
   makesheet = prepare_txn1_(pay_to, ext_in, submit, scan_count, min_utxo,
       max_utxo, sort_flag, from_uocks);
   if (makesheet == null) {
-    return;
+    return null;
   }
 
   String command = 'makesheet';
@@ -65,7 +65,7 @@ void query_sheet(pay_to, from_uocks) async {
   final response_sheet = await http.post(url_sheet, body: bytes_makesheet);
   if (response_sheet.statusCode != 200) {
     print('err /txn/sheets/sheet');
-    return;
+    return null;
   }
   List<int> orgsheet_bytes = response_sheet.bodyBytes;
   String s = bytesToHexStr(orgsheet_bytes);
@@ -73,12 +73,16 @@ void query_sheet(pay_to, from_uocks) async {
 
   orgSheet = parseOrgSheet(orgsheet_bytes);
   if (orgSheet == null) {
-    return;
+    print('orgSheet null');
+    return null;
   }
 
   //网络获取钱包
   _wallet = await getWallet();
-  if (_wallet == null) return;
+  if (_wallet == null) {
+    print('_wallet null');
+    return null;
+  }
   List<int> coin_hash = hexStrToBytes(_wallet.pub_hash + '00');
   print(coin_hash);
 
@@ -140,11 +144,16 @@ void query_sheet(pay_to, from_uocks) async {
 
       //tee签名
       TeeSign teeSign = await getSign(s);
-      if (teeSign == null) return;
-
+      if (teeSign == null) {
+        print('teeSign null');
+        return null;
+      }
       //验证签名
       TeeVerifySign teeVerifySign = await verifySign(s, teeSign.msg);
-      if (teeSign == null) return;
+      if (teeVerifySign == null) {
+        print('verify sign err,null');
+        return null;
+      }
 
       List<int> sig = new List<int>.from(hexStrToBytes(teeSign.msg))
         ..addAll(CHR(hash_type));
@@ -194,81 +203,47 @@ void query_sheet(pay_to, from_uocks) async {
     int unsign_num = orgSheet.tx_in.length - pks_num;
     if (unsign_num != 0) {
       print('Warning: some input not signed: ${unsign_num}');
-      return;
+      return null;
     } else {
       String url_txn = WEB_SERVER_ADDR + '/txn/sheets/txn';
       var responseTxn = await http.post(url_txn, body: txn_payload);
       if (responseTxn.statusCode != 200) {
         print('error /txn/sheets/txn');
-        return;
+        return null;
       }
       List<int> responseTxnBytes = responseTxn.bodyBytes;
       String sTxn = bytesToHexStr(responseTxnBytes);
       print('发送txn_payload接收到数据${sTxn}---${sTxn.length}');
       String txnHash = getTxnHash(responseTxnBytes);
+      return txnHash;
 
-      if (txnHash != '') {
-        while (true) {
-          sleep(Duration(seconds: 10));
-          String url_txnhash =
-              WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txnHash;
-          var response_txnhash = await http.get(url_txnhash);
-          if (response_txnhash.statusCode == 200) {
-            QueryTxnHashResult queryTxnHashResult =
-                queryTran(response_txnhash);
-            if (queryTxnHashResult.status == 1) {
-              //交易成功
-              var msg = queryTxnHashResult.successInfo;
-              // TxnSuccessInfo info = msg;
-              if (msg.confirm >= 1) {
-                print('[${DateTime.now()}] 交易成功');
-                return;
-              }
-            }
-          } else {
-            print('Error: request failed, code=${response_txnhash.statusCode}');
-          }
-        }
-      }
+      //根据生成的交易哈希可以作查询
+      // bool isQuery = true;
+      // if (txnHash != '') {
+      //   while (isQuery) {
+      //     sleep(Duration(seconds: 10));
+      //     String url_txnhash =
+      //         WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txnHash;
+      //     var response_txnhash = await http.get(url_txnhash);
+      //     if (response_txnhash.statusCode == 200) {
+      //       QueryTxnHashResult queryTxnHashResult = queryTran(response_txnhash);
+      //       if (queryTxnHashResult.status == 1) {
+      //         //交易成功
+      //         var msg = queryTxnHashResult.successInfo;
+      //         if (msg.confirm >= 1) {
+      //           print('[${DateTime.now()}] 交易成功');
+      //           isQuery = false;
+      //           // return msg;
+      //         }
+      //       }
+      //     } else {
+      //       print('Error: request failed, code=${response_txnhash.statusCode}');
+      //     }
+      //   }
+      // }
     }
   }
 }
-
-// Future<String> query_tran(String txn_hash) async {
-//   String url_txnhash = WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txn_hash;
-//   var res = await http.get(url_txnhash);
-//   // QueryTxnHashResult
-//   if (res.statusCode == 200) {
-//     // var result = query_tran(response_txnhash);
-//     String command = getCommandStrFromBytes(res.bodyBytes);
-//     if (command == UdpReject.command) {
-//       UdpReject reject = parseUdpReject(res.bodyBytes);
-//       if (reject == null) {
-//         return '';
-//       }
-//       String sErr = reject.message;
-//       if (sErr == 'in pending state') {
-//         print('[${DateTime.now()}] Transaction state: pending');
-//         return 'pending';
-//       } else {
-//         print('Error:$sErr');
-//         return '$sErr';
-//       }
-//     } else if (command == UdpConfirm.command) {
-//       UdpConfirm confirm = parseUdpConfirm(res.bodyBytes);
-//       if (confirm.hash == bytesToHexStr(hash_)) {
-//         var hi = confirm.arg & 0xffffffff;
-//         var num = (confirm.arg >> 32) & 0xffff;
-//         var idx = (confirm.arg >> 48) & 0xffff;
-//         print(
-//             '[${DateTime.now()}] Transaction state: confirm=$num,hi=$hi,idx=$idx');
-//         return 'confirm=$num,hi=$hi,idx=$idx';
-//       }
-//     }
-//   } else {
-//     print('Error: request failed, code=${res.statusCode}');
-//   }
-// }
 
 QueryTxnHashResult queryTran(http.Response res) {
   QueryTxnHashResult queryTxnHashResult;

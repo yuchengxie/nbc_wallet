@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
+import 'package:nbc_wallet/api/model/jsonEntity.dart';
 import 'package:nbc_wallet/api/transfer.dart';
 
 class TransferPage extends StatefulWidget {
@@ -31,11 +33,30 @@ class TransferComponent extends StatefulWidget {
 
 class _TransferComponentState extends State<TransferComponent> {
   // var _username = new TextEditingController();
+  // String _hash = '';
+  TextEditingController addrController = TextEditingController();
+  TextEditingController amountController = TextEditingController();
+  TextEditingController hashController = TextEditingController();
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    addrController.text =
+        '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o';
+    amountController.text = '1';
+    hashController.text = '';
+  }
+
+  _showSuccess(TxnSuccessInfo res) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('交易成功'),
+            content: Text('${res.height},${res.confirm}'),
+          );
+        });
   }
 
   @override
@@ -49,18 +70,41 @@ class _TransferComponentState extends State<TransferComponent> {
             ),
             TextFieldOutLine(
               labelText: '收款人的钱包地址',
-              controllerText: '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o',
+              controller: this.addrController,
             ),
             TextFieldOutLine(
               labelText: '转账金额',
-              controllerText: '1',
+              controller: this.amountController,
             ),
+            TextFieldOutLine(
+              labelText: '交易生成hash',
+              maxLines: 2,
+              controller: this.hashController,
+              changed: (v) {
+                print('v:$v');
+                setState(() {
+                  this.hashController.text = v;
+                  // this._hash='123123123';
+                  // this._hash='1111111111111111';
+                  // this._hash = v;
+                });
+              },
+            ),
+             Row(
+              children: <Widget>[
+                Text(
+                  'height=test,confirm=test',
+                  style: TextStyle(fontSize: 16),
+                )
+              ],
+            ),
+            SizedBox(height: 10,),
             TextFieldOutLine(
               labelText: '备注',
               maxLines: 3,
             ),
             SizedBox(
-              height: 200,
+              height: 260,
             ),
             Row(
               children: <Widget>[
@@ -72,13 +116,41 @@ class _TransferComponentState extends State<TransferComponent> {
                       textColor: Colors.white,
                       child: Text('交 易'),
                       onPressed: () {
-                        query_sheet('', '');
+                        transfer('', '').then((res) {
+                          setState(() {
+                             this.hashController.text = res;
+                          });
+                        });
+                       
                       },
                     ),
                   ),
                 )
               ],
-            )
+            ),
+            SizedBox(height: 10,),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    child: RaisedButton(
+                      color: Colors.cyan,
+                      textColor: Colors.white,
+                      child: Text('查 询'),
+                      onPressed: () {
+                        // transfer('', '').then((res) {
+                        //   setState(() {
+                        //      this.hashController.text = res;
+                        //   });
+                        // });
+                       
+                      },
+                    ),
+                  ),
+                )
+              ],
+            ),
           ],
         ));
   }
@@ -88,19 +160,23 @@ class TextFieldOutLine extends StatefulWidget {
   final String labelText;
   final int maxLines;
   Icon suffix;
+  TextEditingController controller;
   // final String controlText;
   String controllerText;
+  final changed;
 
   TextFieldOutLine(
       {Key key,
       this.labelText = '',
       this.maxLines = 1,
       this.suffix,
-      this.controllerText})
+      this.controllerText,
+      this.controller,
+      this.changed})
       : super(key: key);
 
-  _TextFieldOutLineState createState() =>
-      _TextFieldOutLineState(labelText, maxLines, suffix, controllerText);
+  _TextFieldOutLineState createState() => _TextFieldOutLineState(
+      labelText, maxLines, suffix, controllerText, controller, changed);
 }
 
 class _TextFieldOutLineState extends State<TextFieldOutLine> {
@@ -110,9 +186,11 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
   final maxLines;
   Icon suffix;
   String controllerText;
+  TextEditingController controller;
+  final changed;
 
-  _TextFieldOutLineState(
-      this.labelText, this.maxLines, this.suffix, this.controllerText);
+  _TextFieldOutLineState(this.labelText, this.maxLines, this.suffix,
+      this.controllerText, this.controller, this.changed);
 
   @override
   Widget build(BuildContext context) {
@@ -129,13 +207,18 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
               suffix: this.suffix,
             ),
             // controller: this.controller,
-            controller: TextEditingController(text: this.controllerText),
-            onChanged: (v) {
-              print('Onchanged v:$v');
-              setState(() {
-                this.controllerText = v;
-              });
-            },
+            // controller: TextEditingController(text: this.controllerText),
+            // onSubmitted: changed,
+            controller: this.controller,
+            onChanged: changed,
+
+            // onEditingComplete: changed,
+            // onChanged: (v) {
+            //   print('Onchanged v:$v');
+            //   setState(() {
+            //     this.controllerText = v;
+            //   });
+            // },
           ),
           SizedBox(height: 15),
         ],
