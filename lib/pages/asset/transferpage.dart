@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class TransferPage extends StatefulWidget {
@@ -28,30 +29,38 @@ class TransferComponent extends StatefulWidget {
 }
 
 class _TransferComponentState extends State<TransferComponent> {
+  // var _username = new TextEditingController();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
         margin: EdgeInsets.all(16),
         child: Column(
           children: <Widget>[
+            SizedBox(
+              height: 10,
+            ),
             TextFieldOutLine(
-              labelText: '收款地址',
+              labelText: '收款人的钱包地址',
+              controllerText: '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o',
+            ),
+            TextFieldOutLine(
+              labelText: '转账金额',
+              controllerText: '1',
             ),
             TextFieldOutLine(
               labelText: '备注',
               maxLines: 3,
             ),
-            TextFieldFlat(),
-            // TextFieldDIY(
-            //   labelText: '收款人钱包地址',
-            //   suffix: Icon(Icons.wifi),
-            // ),
-            // TextFieldDIY(
-            //   labelText: '转账金额',
-            // ),
-            // TextFieldDIY(
-            //   labelText: '备注',
-            //   maxLines: 3,
+            SizedBox(
+              height: 200,
+            ),
             Row(
               children: <Widget>[
                 Expanded(
@@ -72,37 +81,39 @@ class _TransferComponentState extends State<TransferComponent> {
   }
 }
 
-class TextFieldFlat extends StatelessWidget {
-  const TextFieldFlat({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: TextField(
-      ),
-    );
-  }
-}
-
 class TextFieldOutLine extends StatefulWidget {
   final String labelText;
   final int maxLines;
   Icon suffix;
+  // final String controlText;
+  String controllerText;
+
   TextFieldOutLine(
-      {Key key, this.labelText = '', this.maxLines = 1, this.suffix})
+      {Key key,
+      this.labelText = '',
+      this.maxLines = 1,
+      this.suffix,
+      this.controllerText})
       : super(key: key);
 
   _TextFieldOutLineState createState() =>
-      _TextFieldOutLineState(labelText, maxLines, suffix);
+      _TextFieldOutLineState(labelText, maxLines, suffix, controllerText);
 }
 
 class _TextFieldOutLineState extends State<TextFieldOutLine> {
+  // final TextEditingController controller;
+
   final labelText;
   final maxLines;
   Icon suffix;
-  _TextFieldOutLineState(this.labelText, this.maxLines, this.suffix);
+  String controllerText;
+
+  _TextFieldOutLineState(
+      this.labelText, this.maxLines, this.suffix, this.controllerText);
+
   @override
   Widget build(BuildContext context) {
+    // print('c:${this.controller}');
     return Container(
       child: Column(
         children: <Widget>[
@@ -114,8 +125,16 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
               labelText: this.labelText,
               suffix: this.suffix,
             ),
+            // controller: this.controller,
+            controller: TextEditingController(text: this.controllerText),
+            onChanged: (v) {
+              print('Onchanged v:$v');
+              setState(() {
+                this.controllerText = v;
+              });
+            },
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 15),
         ],
       ),
     );
