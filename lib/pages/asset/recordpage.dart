@@ -31,7 +31,7 @@ class BottomButton extends StatelessWidget {
               child: Container(
                 height: 50,
                 child: RaisedButton.icon(
-                  color: Colors.deepOrange,
+                  color: Colors.cyan,
                   textColor: Colors.white,
                   label: Text('转账'),
                   icon: Icon(Icons.face),
@@ -48,7 +48,7 @@ class BottomButton extends StatelessWidget {
                   color: Colors.blue,
                   textColor: Colors.white,
                   label: Text('收款'),
-                  icon: Icon(Icons.mood),
+                  icon: Icon(Icons.whatshot),
                   onPressed: () {},
                 ),
               ),

@@ -7,7 +7,7 @@ class PersonalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('我'),),
+      appBar: AppBar(title: Text('我'),backgroundColor: Colors.cyan,),
     );
   }
 }

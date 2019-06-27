@@ -7,7 +7,7 @@ class MarketPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('行情'),),
+      appBar: AppBar(title: Text('行情'),backgroundColor: Colors.cyan,),
     );
   }
 }
