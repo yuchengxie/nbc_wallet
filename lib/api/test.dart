@@ -1,24 +1,20 @@
 import 'dart:io';
-import 'dart:typed_data';
-
-// import '../api/utils/utils.dart';
-// import './model/message.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'dart:convert';
 import './model/jsonEntity.dart';
 
 void main() {
-//  verifySign();
-  //计算时间差
-  var time1=DateTime.now();
-  var count=0;
-  while(count<3){
-    sleep(Duration(seconds: 3));
-    print('gogogo');
-    count++;
-  }
-  var t=DateTime.now().difference(time1);
-  print(t);
+  // TxnSuccessInfo txnSuccessInfo =
+  //     TxnSuccessInfo(confirm: 2, height: 56745, idx: 1);
+  // var t=jsonEncode(txnSuccessInfo);
+  TxnSuccessInfo info =
+      TxnSuccessInfo.fromJson({"height": 53212, "confirm": 0, "idx": 1});
+  print(info);
+}
+
+Future<Response> test01() async {
+  return await http.get('http://www.baidu.com');
 }
 
 void verifySign() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:nbc_wallet/api/transfer.dart';
 
 class TransferPage extends StatefulWidget {
   TransferPage({Key key}) : super(key: key);
@@ -70,7 +71,9 @@ class _TransferComponentState extends State<TransferComponent> {
                       color: Colors.cyan,
                       textColor: Colors.white,
                       child: Text('交 易'),
-                      onPressed: () {},
+                      onPressed: () {
+                        query_sheet('', '');
+                      },
                     ),
                   ),
                 )

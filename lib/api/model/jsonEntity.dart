@@ -35,3 +35,34 @@ class TeeVerifySign {
       : msg = json['msg'],
         status = json['status'];
 }
+
+class QueryTxnHashResult {
+  // String msg;
+  TxnSuccessInfo successInfo;
+  String stateInfo;
+  int status;
+  QueryTxnHashResult({this.successInfo, this.stateInfo,this.status});
+  QueryTxnHashResult.fromJson(Map<String, dynamic> json)
+      : successInfo = json['successInfo'],
+        stateInfo = json['stateInfo'],
+        status = json['status'];
+}
+
+class TxnSuccessInfo {
+  int height;
+  int confirm;
+  int idx;
+  TxnSuccessInfo({this.height, this.confirm, this.idx});
+  TxnSuccessInfo.fromJson(Map<String, dynamic> json)
+      : height = json['height'],
+        confirm = json['confirm'],
+        idx = json['idx'];
+
+  Map toJson() {
+    Map map = new Map();
+    map["height"] = this.height;
+    map["confirm"] = this.confirm;
+    map["idx"] = this.idx;
+    return map;
+  }
+}

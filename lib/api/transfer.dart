@@ -5,6 +5,7 @@ import 'package:crypto/src/sha256.dart';
 import 'package:bs58check/bs58check.dart' as bs58check;
 import 'package:buffer/buffer.dart';
 import 'package:http/http.dart' as http;
+import 'package:nbc_wallet/api/server/net.dart';
 import './pack/pack.dart';
 import './pack/unpack.dart';
 import './model/jsonEntity.dart';
@@ -13,6 +14,10 @@ import './scripts/opscript.dart';
 import './utils/utils.dart';
 
 const WEB_SERVER_ADDR = 'http://user1-node.nb-chain.net';
+const TXN_PENDING = 0;
+const TXN_SUCCESS = 1;
+const TXN_ERROR = -1;
+const S_PENDING = 'pending';
 var sequence = 0,
 // _wait_submit = [],
     SHEET_CACHE_SIZE = 16,
@@ -30,6 +35,7 @@ final magic = [0xf9, 0x6e, 0x62, 0x74];
 MakeSheet makesheet;
 OrgSheet orgSheet;
 List<int> hash_;
+bool isQuery = true;
 
 void main() {
   query_sheet('', '');
@@ -46,7 +52,6 @@ void query_sheet(pay_to, from_uocks) async {
   makesheet = prepare_txn1_(pay_to, ext_in, submit, scan_count, min_utxo,
       max_utxo, sort_flag, from_uocks);
   if (makesheet == null) {
-    sn = 0;
     return;
   }
 
@@ -55,7 +60,7 @@ void query_sheet(pay_to, from_uocks) async {
   List<int> bytes_makesheet = wholePayload(payload_makesheet, command);
 
   String s1 = bytesToHexStr(bytes_makesheet);
-  print('1准备发送数据:${s1}--${s1.length}');
+  print('1准备发送数据:${s1.length}---${s1}');
   final url_sheet = WEB_SERVER_ADDR + '/txn/sheets/sheet';
   final response_sheet = await http.post(url_sheet, body: bytes_makesheet);
   if (response_sheet.statusCode != 200) {
@@ -64,32 +69,16 @@ void query_sheet(pay_to, from_uocks) async {
   }
   List<int> orgsheet_bytes = response_sheet.bodyBytes;
   String s = bytesToHexStr(orgsheet_bytes);
-  print('1接收到数据${s}---${s.length}');
-// List<int> orgsheet_payload = getPayload(orgsheet_bytes);
-// //test
-// if (orgsheet_payload == null) {
-//   return;
-// }
-  String s2 = bytesToHexStr(orgsheet_bytes);
-  print('${s2}---${s2.length}');
+  print('1接收到数据${s.length}---${s}');
+
   orgSheet = parseOrgSheet(orgsheet_bytes);
   if (orgSheet == null) {
     return;
   }
-//网络获取钱包
-  final url2 = 'http://127.0.0.1:3000/get_wallet';
-  final response2 = await http.get(url2);
-  if (response2.statusCode != 200) {
-    print('server not found');
-    return;
-  }
-  final _json = json.decode(response2.body);
-  if (_json['status'] == -1) {
-    print('tee not found');
-    return;
-  }
-  _wallet = TeeWallet.fromJson(_json);
-  print('wallet_json:${_json}');
+
+  //网络获取钱包
+  _wallet = await getWallet();
+  if (_wallet == null) return;
   List<int> coin_hash = hexStrToBytes(_wallet.pub_hash + '00');
   print(coin_hash);
 
@@ -135,7 +124,6 @@ void query_sheet(pay_to, from_uocks) async {
 
   for (var k in d.keys) {
     print('${k}--${d[k]}');
-// if(coin_hash!=addr)
   }
 
   var pks_out0 = orgSheet.pks_out[0].items;
@@ -149,34 +137,14 @@ void query_sheet(pay_to, from_uocks) async {
           orgSheet.tx_in, orgSheet.tx_out, 0, idx, hash_type);
       String s = bytesToHexStr(sign_payload);
       print('>>> ready sign payload:${s}---${s.length}');
-      //tee签名
-      final url_sign = 'http://127.0.0.1:3000/get_sign';
-      final sign_params = {'payload': s, 'pincode': '000000'};
-      final response_sign = await http.post(url_sign, body: sign_params);
-      if (response_sign.statusCode != 200) {
-        print('sign err');
-        return;
-      }
-      final _json_sign = json.decode(response_sign.body);
-      TeeSign teeSign = TeeSign.fromJson(_json_sign);
-      print('>>> tee_sign:${teeSign.msg}');
 
-      //验证签名是否合法
-      final url_verify_sign = 'http://127.0.0.1:3000/verify_sign';
-      final verify_sign_params = {'data': s, 'sig': teeSign.msg};
-      final response_verify_sign =
-          await http.post(url_verify_sign, body: verify_sign_params);
-      if (response_verify_sign.statusCode == 200) {
-        final verify_sign_result = json.decode(response_verify_sign.body);
-        TeeVerifySign teeVerifySign =
-            TeeVerifySign.fromJson(verify_sign_result);
-        if (teeVerifySign.status == 0) {
-          print('verify sign failed');
-          return;
-        }else if(teeVerifySign.status==1){
-          print('verify sign success');
-        }
-      }
+      //tee签名
+      TeeSign teeSign = await getSign(s);
+      if (teeSign == null) return;
+
+      //验证签名
+      TeeVerifySign teeVerifySign = await verifySign(s, teeSign.msg);
+      if (teeSign == null) return;
 
       List<int> sig = new List<int>.from(hexStrToBytes(teeSign.msg))
         ..addAll(CHR(hash_type));
@@ -229,26 +197,34 @@ void query_sheet(pay_to, from_uocks) async {
       return;
     } else {
       String url_txn = WEB_SERVER_ADDR + '/txn/sheets/txn';
-      var response_txn = await http.post(url_txn, body: txn_payload);
-      if (response_txn.statusCode != 200) {
+      var responseTxn = await http.post(url_txn, body: txn_payload);
+      if (responseTxn.statusCode != 200) {
         print('error /txn/sheets/txn');
         return;
       }
-      List<int> response_txn_bytes = response_txn.bodyBytes;
-      String s_txn = bytesToHexStr(response_txn_bytes);
-      print('发送txn_payload接收到数据${s_txn}---${s_txn.length}');
-      String txn_hash = getTxnHash(response_txn_bytes);
+      List<int> responseTxnBytes = responseTxn.bodyBytes;
+      String sTxn = bytesToHexStr(responseTxnBytes);
+      print('发送txn_payload接收到数据${sTxn}---${sTxn.length}');
+      String txnHash = getTxnHash(responseTxnBytes);
 
-      if (txn_hash != '') {
-        int count = 0;
-        while (count < 1000) {
-          count++;
+      if (txnHash != '') {
+        while (true) {
           sleep(Duration(seconds: 10));
           String url_txnhash =
-              WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txn_hash;
+              WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txnHash;
           var response_txnhash = await http.get(url_txnhash);
           if (response_txnhash.statusCode == 200) {
-            query_tran(response_txnhash);
+            QueryTxnHashResult queryTxnHashResult =
+                queryTran(response_txnhash);
+            if (queryTxnHashResult.status == 1) {
+              //交易成功
+              var msg = queryTxnHashResult.successInfo;
+              // TxnSuccessInfo info = msg;
+              if (msg.confirm >= 1) {
+                print('[${DateTime.now()}] 交易成功');
+                return;
+              }
+            }
           } else {
             print('Error: request failed, code=${response_txnhash.statusCode}');
           }
@@ -258,30 +234,78 @@ void query_sheet(pay_to, from_uocks) async {
   }
 }
 
-void query_tran(http.Response res) {
+// Future<String> query_tran(String txn_hash) async {
+//   String url_txnhash = WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txn_hash;
+//   var res = await http.get(url_txnhash);
+//   // QueryTxnHashResult
+//   if (res.statusCode == 200) {
+//     // var result = query_tran(response_txnhash);
+//     String command = getCommandStrFromBytes(res.bodyBytes);
+//     if (command == UdpReject.command) {
+//       UdpReject reject = parseUdpReject(res.bodyBytes);
+//       if (reject == null) {
+//         return '';
+//       }
+//       String sErr = reject.message;
+//       if (sErr == 'in pending state') {
+//         print('[${DateTime.now()}] Transaction state: pending');
+//         return 'pending';
+//       } else {
+//         print('Error:$sErr');
+//         return '$sErr';
+//       }
+//     } else if (command == UdpConfirm.command) {
+//       UdpConfirm confirm = parseUdpConfirm(res.bodyBytes);
+//       if (confirm.hash == bytesToHexStr(hash_)) {
+//         var hi = confirm.arg & 0xffffffff;
+//         var num = (confirm.arg >> 32) & 0xffff;
+//         var idx = (confirm.arg >> 48) & 0xffff;
+//         print(
+//             '[${DateTime.now()}] Transaction state: confirm=$num,hi=$hi,idx=$idx');
+//         return 'confirm=$num,hi=$hi,idx=$idx';
+//       }
+//     }
+//   } else {
+//     print('Error: request failed, code=${res.statusCode}');
+//   }
+// }
+
+QueryTxnHashResult queryTran(http.Response res) {
+  QueryTxnHashResult queryTxnHashResult;
   String command = getCommandStrFromBytes(res.bodyBytes);
   if (command == UdpReject.command) {
     UdpReject reject = parseUdpReject(res.bodyBytes);
-    if (reject == null) {
-      return;
-    }
+    if (reject == null) return null;
     String sErr = reject.message;
     if (sErr == 'in pending state') {
       // return 'pending';
       print('[${DateTime.now()}] Transaction state: pending');
+      queryTxnHashResult = QueryTxnHashResult(
+          stateInfo: S_PENDING, successInfo: null, status: TXN_PENDING);
+      return queryTxnHashResult;
     } else {
-      print('Error:${sErr}');
+      print('Error:$sErr');
+      queryTxnHashResult = QueryTxnHashResult(
+          stateInfo: '$sErr', successInfo: null, status: TXN_ERROR);
     }
   } else if (command == UdpConfirm.command) {
     UdpConfirm confirm = parseUdpConfirm(res.bodyBytes);
+    if (confirm == null) return null;
     if (confirm.hash == bytesToHexStr(hash_)) {
       var hi = confirm.arg & 0xffffffff;
       var num = (confirm.arg >> 32) & 0xffff;
       var idx = (confirm.arg >> 48) & 0xffff;
+      TxnSuccessInfo txnSuccessInfo =
+          TxnSuccessInfo(confirm: num, height: hi, idx: idx);
+      String sucJson = jsonEncode(txnSuccessInfo);
       print(
-          '[${DateTime.now()}] Transaction state: confirm=${num},hi=${hi},idx=${idx}');
+          '[${DateTime.now()}] Transaction state: confirm=$num,hi=$hi,idx=$idx');
+      queryTxnHashResult = QueryTxnHashResult(
+          stateInfo: '', successInfo: txnSuccessInfo, status: TXN_SUCCESS);
+      return queryTxnHashResult;
     }
   }
+  return queryTxnHashResult;
 }
 
 String getTxnHash(response_txn_bytes) {
