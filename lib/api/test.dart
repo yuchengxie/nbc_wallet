@@ -3,22 +3,15 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'dart:convert';
 import './model/jsonEntity.dart';
+import 'transfer.dart';
 
 String main() {
-  int a = 0;
-
-
-  while (true) {
-    print('a:${a}');
-    a++;
-    if (a >= 2) {
-      // return '123';
-      break;
-      // return;
-    }
-    sleep(Duration(seconds: 3));
-  }
-  print('finished');
+  //
+  getQueryTxnHashResult(
+          '2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37')
+      .then((res) {
+    print('完成后接收:$res');
+  });
 }
 
 Future<Response> test01() async {

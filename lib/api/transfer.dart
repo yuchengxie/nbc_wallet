@@ -245,9 +245,12 @@ Future<String> transfer(pay_to, from_uocks) async {
   }
 }
 
-QueryTxnHashResult queryTran(http.Response res) {
-  QueryTxnHashResult queryTxnHashResult;
+Future<QueryTxnHashResult> getQueryTxnHashResult(String txnHash) async {
+  String utl = WEB_SERVER_ADDR + '/txn/sheets/state?hash=' + txnHash;
+  var res = await http.get(utl);
+
   String command = getCommandStrFromBytes(res.bodyBytes);
+  QueryTxnHashResult queryTxnHashResult;
   if (command == UdpReject.command) {
     UdpReject reject = parseUdpReject(res.bodyBytes);
     if (reject == null) return null;
@@ -266,21 +269,21 @@ QueryTxnHashResult queryTran(http.Response res) {
   } else if (command == UdpConfirm.command) {
     UdpConfirm confirm = parseUdpConfirm(res.bodyBytes);
     if (confirm == null) return null;
-    if (confirm.hash == bytesToHexStr(hash_)) {
-      var hi = confirm.arg & 0xffffffff;
-      var num = (confirm.arg >> 32) & 0xffff;
-      var idx = (confirm.arg >> 48) & 0xffff;
-      TxnSuccessInfo txnSuccessInfo =
-          TxnSuccessInfo(confirm: num, height: hi, idx: idx);
-      String sucJson = jsonEncode(txnSuccessInfo);
-      print(
-          '[${DateTime.now()}] Transaction state: confirm=$num,hi=$hi,idx=$idx');
-      queryTxnHashResult = QueryTxnHashResult(
-          stateInfo: '', successInfo: txnSuccessInfo, status: TXN_SUCCESS);
-      return queryTxnHashResult;
-    }
+    // if (confirm.hash == bytesToHexStr(hash_)) {
+    var hi = confirm.arg & 0xffffffff;
+    var num = (confirm.arg >> 32) & 0xffff;
+    var idx = (confirm.arg >> 48) & 0xffff;
+    TxnSuccessInfo txnSuccessInfo =
+        TxnSuccessInfo(confirm: num, height: hi, idx: idx);
+    // String sucJson = jsonEncode(txnSuccessInfo);
+    print(
+        '[${DateTime.now()}] Transaction state: confirm=$num,hi=$hi,idx=$idx');
+    queryTxnHashResult = QueryTxnHashResult(
+        stateInfo: 'finish', successInfo: txnSuccessInfo, status: TXN_SUCCESS);
+    return queryTxnHashResult;
+    // }
   }
-  return queryTxnHashResult;
+  // return queryTxnHashResult;
 }
 
 String getTxnHash(response_txn_bytes) {

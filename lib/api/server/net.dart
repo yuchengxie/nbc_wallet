@@ -9,6 +9,7 @@ const WEB_SERVER_ADDR = 'http://user1-node.nb-chain.net';
 const SUCCESS = 1;
 const FAILED = 0;
 const TEENOTREADY = -1;
+
 // SUCCESS = 1
 // FAILED = 0
 // TEENOTREADY = -1

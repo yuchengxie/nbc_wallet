@@ -37,6 +37,7 @@ class _TransferComponentState extends State<TransferComponent> {
   TextEditingController addrController = TextEditingController();
   TextEditingController amountController = TextEditingController();
   TextEditingController hashController = TextEditingController();
+  String queryState = '';
 
   @override
   void initState() {
@@ -45,7 +46,8 @@ class _TransferComponentState extends State<TransferComponent> {
     addrController.text =
         '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o';
     amountController.text = '1';
-    hashController.text = '';
+    hashController.text =
+        '2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37';
   }
 
   _showSuccess(TxnSuccessInfo res) {
@@ -70,6 +72,7 @@ class _TransferComponentState extends State<TransferComponent> {
             ),
             TextFieldOutLine(
               labelText: '收款人的钱包地址',
+              maxLines: 2,
               controller: this.addrController,
             ),
             TextFieldOutLine(
@@ -84,21 +87,23 @@ class _TransferComponentState extends State<TransferComponent> {
                 print('v:$v');
                 setState(() {
                   this.hashController.text = v;
-                  // this._hash='123123123';
-                  // this._hash='1111111111111111';
-                  // this._hash = v;
                 });
               },
             ),
-             Row(
+            Row(
               children: <Widget>[
                 Text(
-                  'height=test,confirm=test',
-                  style: TextStyle(fontSize: 16),
-                )
+                  this.queryState,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.blue
+                  ),
+                ),
               ],
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             TextFieldOutLine(
               labelText: '备注',
               maxLines: 3,
@@ -116,19 +121,20 @@ class _TransferComponentState extends State<TransferComponent> {
                       textColor: Colors.white,
                       child: Text('交 易'),
                       onPressed: () {
-                        transfer('', '').then((res) {
-                          setState(() {
-                             this.hashController.text = res;
-                          });
-                        });
-                       
+                        // transfer('', '').then((res) {
+                        //   setState(() {
+                        //     this.hashController.text = res;
+                        //   });
+                        // });
                       },
                     ),
                   ),
                 )
               ],
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             Row(
               children: <Widget>[
                 Expanded(
@@ -139,12 +145,25 @@ class _TransferComponentState extends State<TransferComponent> {
                       textColor: Colors.white,
                       child: Text('查 询'),
                       onPressed: () {
-                        // transfer('', '').then((res) {
-                        //   setState(() {
-                        //      this.hashController.text = res;
-                        //   });
-                        // });
-                       
+                        //2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37
+                        print('界面上传来的哈希值:${this.hashController.text}');
+                        getQueryTxnHashResult(this.hashController.text)
+                            .then((res) {
+                          String r;
+                          if (res == null) {
+                            r = '哈希错误';
+                          } else {
+                            if (res.successInfo != null) {
+                              r = '交易完成:height(${res.successInfo.height})/confirm(${res.successInfo.confirm})/idx(${res.successInfo.idx})';
+                            } else {
+                              r = '正在确认状态:${res.stateInfo}';
+                            }
+                          }
+                          print('$r');
+                          setState(() {
+                            this.queryState = r;
+                          });
+                        });
                       },
                     ),
                   ),
