@@ -41,7 +41,7 @@ void main() {
   // query_sheet('', '');
 }
 
-Future<String> transfer(pay_to, from_uocks) async {
+Future<MakeSheetResult> transfer(pay_to, from_uocks) async {
   int ext_in = 0;
   bool submit = true;
   int scan_count = 0;
@@ -214,8 +214,8 @@ Future<String> transfer(pay_to, from_uocks) async {
       List<int> responseTxnBytes = responseTxn.bodyBytes;
       String sTxn = bytesToHexStr(responseTxnBytes);
       print('发送txn_payload接收到数据${sTxn}---${sTxn.length}');
-      String txnHash = getTxnHash(responseTxnBytes);
-      return txnHash;
+      MakeSheetResult makeSheetReusult = getTxnHash(responseTxnBytes);
+      return makeSheetReusult;
 
       //根据生成的交易哈希可以作查询
       // bool isQuery = true;
@@ -256,7 +256,6 @@ Future<QueryTxnHashResult> getQueryTxnHashResult(String txnHash) async {
     if (reject == null) return null;
     String sErr = reject.message;
     if (sErr == 'in pending state') {
-      // return 'pending';
       print('[${DateTime.now()}] Transaction state: pending');
       queryTxnHashResult = QueryTxnHashResult(
           stateInfo: S_PENDING, successInfo: null, status: TXN_PENDING);
@@ -269,55 +268,53 @@ Future<QueryTxnHashResult> getQueryTxnHashResult(String txnHash) async {
   } else if (command == UdpConfirm.command) {
     UdpConfirm confirm = parseUdpConfirm(res.bodyBytes);
     if (confirm == null) return null;
-    // if (confirm.hash == bytesToHexStr(hash_)) {
     var hi = confirm.arg & 0xffffffff;
     var num = (confirm.arg >> 32) & 0xffff;
     var idx = (confirm.arg >> 48) & 0xffff;
     TxnSuccessInfo txnSuccessInfo =
         TxnSuccessInfo(confirm: num, height: hi, idx: idx);
-    // String sucJson = jsonEncode(txnSuccessInfo);
     print(
         '[${DateTime.now()}] Transaction state: confirm=$num,hi=$hi,idx=$idx');
     queryTxnHashResult = QueryTxnHashResult(
         stateInfo: 'finish', successInfo: txnSuccessInfo, status: TXN_SUCCESS);
     return queryTxnHashResult;
-    // }
   }
-  // return queryTxnHashResult;
 }
 
-String getTxnHash(response_txn_bytes) {
-  String command = getCommandStrFromBytes(response_txn_bytes);
+MakeSheetResult getTxnHash(responseTxnBytes) {
+  String command = getCommandStrFromBytes(responseTxnBytes);
 // List<int> txn_response_payload = response_txn_bytes.sublist(24);
   if (command == UdpReject.command) {
-    UdpReject msg3 = parseUdpReject(response_txn_bytes);
+    UdpReject msg3 = parseUdpReject(responseTxnBytes);
     print('Error:${msg3.message}');
   } else if (command == UdpConfirm.command) {
-    UdpConfirm msg3 = parseUdpConfirm(response_txn_bytes);
+    UdpConfirm msg3 = parseUdpConfirm(responseTxnBytes);
     if (msg3.hash == bytesToHexStr(hash_)) {
       state_info[2] = 'submited';
       sn = orgSheet.sequence;
       // if (sn！=null) {
-      List info = submit_info(sn);
+      List info = submitInfo(sn);
+      if (info == null) return null;
       var state = info[2];
-      var txn_hash = bytesToHexStr(info[3]);
-      String last_uocks = bytesToHexStr(info[4][0]);
+      var txnHash = bytesToHexStr(info[3]);
+      String lastUocks = bytesToHexStr(info[4][0]);
       // String last_uocks = info[4][0];
-      if (state == 'submited' && txn_hash != null) {
+      if (state == 'submited' && txnHash != null) {
         String sDesc = '\nTransaction state:' + state;
-        if (last_uocks != '') {
-          sDesc += ',last uock: ' + last_uocks;
+        if (lastUocks != '') {
+          sDesc += ',last uock: ' + lastUocks;
           print(sDesc);
-          print('[${DateTime.now()}] Transaction hash:${txn_hash}');
+          print('[${DateTime.now()}] Transaction hash:${txnHash}');
         }
         // }
-        return txn_hash;
+        // return txn_hash;
+        return MakeSheetResult(txnHash: txnHash, lastUock: lastUocks);
       }
     }
   }
 }
 
-List submit_info(sn) {
+List submitInfo(sn) {
 // var state_info = [orgsheetMsg.sequence, txn, 'requested', hash_, orgsheetMsg.last_uocks];
   for (var i = 0; i < _wait_submit.length; i++) {
     List info = _wait_submit[i];
@@ -341,7 +338,7 @@ MakeSheet prepare_txn1_(pay_to, ext_in, submit, scan_count, min_utxo, max_utxo,
 
   List<PayTo> pay_to = List<PayTo>();
   PayTo pay_to1 = PayTo(
-    value: 100000000,
+    value: 1000000, //每次0.01测试
     address: '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o',
   );
   pay_to.add(pay_to1);

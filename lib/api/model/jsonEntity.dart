@@ -41,7 +41,7 @@ class QueryTxnHashResult {
   TxnSuccessInfo successInfo;
   String stateInfo;
   int status;
-  QueryTxnHashResult({this.successInfo, this.stateInfo,this.status});
+  QueryTxnHashResult({this.successInfo, this.stateInfo, this.status});
   QueryTxnHashResult.fromJson(Map<String, dynamic> json)
       : successInfo = json['successInfo'],
         stateInfo = json['stateInfo'],
@@ -65,4 +65,10 @@ class TxnSuccessInfo {
     map["idx"] = this.idx;
     return map;
   }
+}
+
+class MakeSheetResult {
+  String txnHash;
+  String lastUock;
+  MakeSheetResult({this.txnHash,this.lastUock});
 }

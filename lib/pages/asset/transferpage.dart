@@ -32,33 +32,21 @@ class TransferComponent extends StatefulWidget {
 }
 
 class _TransferComponentState extends State<TransferComponent> {
-  // var _username = new TextEditingController();
-  // String _hash = '';
   TextEditingController addrController = TextEditingController();
   TextEditingController amountController = TextEditingController();
   TextEditingController hashController = TextEditingController();
+  TextEditingController lastUockController=TextEditingController();
   String queryState = '';
 
   @override
   void initState() {
     // TODO: implement initState
-    super.initState();
+    // super.initState();
     addrController.text =
         '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o';
     amountController.text = '1';
     hashController.text =
         '2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37';
-  }
-
-  _showSuccess(TxnSuccessInfo res) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('交易成功'),
-            content: Text('${res.height},${res.confirm}'),
-          );
-        });
   }
 
   @override
@@ -90,26 +78,42 @@ class _TransferComponentState extends State<TransferComponent> {
                 });
               },
             ),
-            Row(
-              children: <Widget>[
-                Text(
-                  this.queryState,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.blue
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 10,
-            ),
             TextFieldOutLine(
-              labelText: '备注',
-              maxLines: 3,
+              labelText: '最后uock',
+              maxLines: 1,
+              controller: this.lastUockController,
+              changed: (v) {
+                print('v:$v');
+                setState(() {
+                  this.hashController.text = v;
+                });
+              },
             ),
+            Text(
+              this.queryState,
+              textAlign: TextAlign.start,
+              style: TextStyle(fontSize: 14, color: Colors.blue),
+            ),
+            // Row(
+            //   children: <Widget>[
+            //     Text(
+            //       this.queryState,
+            //       style: TextStyle(
+            //         fontSize: 16,
+            //         color: Colors.blue
+            //       ),
+            //     ),
+            //   ],
+            // ),
+            // SizedBox(
+            //   height: 10,
+            // ),
+            // TextFieldOutLine(
+            //   labelText: '备注',
+            //   maxLines: 3,
+            // ),
             SizedBox(
-              height: 260,
+              height: 200,
             ),
             Row(
               children: <Widget>[
@@ -121,11 +125,12 @@ class _TransferComponentState extends State<TransferComponent> {
                       textColor: Colors.white,
                       child: Text('交 易'),
                       onPressed: () {
-                        // transfer('', '').then((res) {
-                        //   setState(() {
-                        //     this.hashController.text = res;
-                        //   });
-                        // });
+                        transfer('', '').then((res) {
+                          setState(() {
+                            this.hashController.text = res.txnHash;
+                            this.lastUockController.text=res.lastUock;
+                          });
+                        });
                       },
                     ),
                   ),
@@ -219,6 +224,7 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
         children: <Widget>[
           TextField(
             maxLines: this.maxLines,
+            enableInteractiveSelection: false,
             decoration: InputDecoration(
               contentPadding: EdgeInsets.all(15),
               border: OutlineInputBorder(),
