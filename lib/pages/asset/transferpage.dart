@@ -1,8 +1,14 @@
+import 'dart:developer';
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
+import 'package:nbc_wallet/api/managerstate/stateModel.dart';
 import 'package:nbc_wallet/api/model/jsonEntity.dart';
 import 'package:nbc_wallet/api/transfer.dart';
+import 'package:provider/provider.dart';
 
 class TransferPage extends StatefulWidget {
   TransferPage({Key key}) : super(key: key);
@@ -34,23 +40,17 @@ class TransferComponent extends StatefulWidget {
 class _TransferComponentState extends State<TransferComponent> {
   TextEditingController addrController = TextEditingController();
   TextEditingController amountController = TextEditingController();
-  TextEditingController hashController = TextEditingController();
-  TextEditingController lastUockController=TextEditingController();
-  String queryState = '';
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    // super.initState();
-    addrController.text =
-        '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o';
-    amountController.text = '1';
-    hashController.text =
-        '2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37';
-  }
+  TextEditingController txnHashController = TextEditingController();
+  TextEditingController lastUockController = TextEditingController();
+  String _tranState = '';
 
   @override
   Widget build(BuildContext context) {
+    final _stateModel = Provider.of<StateModel>(context);
+    addrController.text = '${_stateModel.recvAddr}';
+    amountController.text = '${_stateModel.amount}';
+    txnHashController.text = '${_stateModel.txnHash}';
+    lastUockController.text = '${_stateModel.lastUock}';
     return Container(
         margin: EdgeInsets.all(16),
         child: Column(
@@ -61,59 +61,64 @@ class _TransferComponentState extends State<TransferComponent> {
             TextFieldOutLine(
               labelText: '收款人的钱包地址',
               maxLines: 2,
-              controller: this.addrController,
+              controller: addrController,
+              changed: (value) {
+                _stateModel.updateAddr(value);
+              },
             ),
             TextFieldOutLine(
               labelText: '转账金额',
-              controller: this.amountController,
+              controller: amountController,
+              changed: (value) {
+                _stateModel.updateAddr(value);
+              },
             ),
             TextFieldOutLine(
               labelText: '交易生成hash',
               maxLines: 2,
-              controller: this.hashController,
-              changed: (v) {
-                print('v:$v');
-                setState(() {
-                  this.hashController.text = v;
-                });
+              controller: txnHashController,
+              changed: (value) {
+                _stateModel.updateTxnHash(value);
               },
             ),
             TextFieldOutLine(
               labelText: '最后uock',
               maxLines: 1,
-              controller: this.lastUockController,
-              changed: (v) {
-                print('v:$v');
-                setState(() {
-                  this.hashController.text = v;
-                });
+              controller: lastUockController,
+              changed: (value) {
+                _stateModel.updateLastUock(value);
               },
             ),
             Text(
-              this.queryState,
+              this._tranState,
               textAlign: TextAlign.start,
               style: TextStyle(fontSize: 14, color: Colors.blue),
             ),
-            // Row(
-            //   children: <Widget>[
-            //     Text(
-            //       this.queryState,
-            //       style: TextStyle(
-            //         fontSize: 16,
-            //         color: Colors.blue
-            //       ),
-            //     ),
-            //   ],
-            // ),
-            // SizedBox(
-            //   height: 10,
-            // ),
-            // TextFieldOutLine(
-            //   labelText: '备注',
-            //   maxLines: 3,
-            // ),
+            Offstage(
+              offstage: false,//true隐藏false显示
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      Text(
+                        '区块确认 1/8',
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 3,
+                    child: LinearProgressIndicator(
+                      backgroundColor: Colors.grey,
+                      value: 0.6,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(
-              height: 200,
+              height: 300,
             ),
             Row(
               children: <Widget>[
@@ -126,10 +131,10 @@ class _TransferComponentState extends State<TransferComponent> {
                       child: Text('交 易'),
                       onPressed: () {
                         transfer('', '').then((res) {
-                          setState(() {
-                            this.hashController.text = res.txnHash;
-                            this.lastUockController.text=res.lastUock;
-                          });
+                          _stateModel.updateTxnHash(res.txnHash);
+                          _stateModel.updateLastUock(res.lastUock);
+
+                          getQueryTxnHashResult(res.txnHash);
                         });
                       },
                     ),
@@ -150,9 +155,8 @@ class _TransferComponentState extends State<TransferComponent> {
                       textColor: Colors.white,
                       child: Text('查 询'),
                       onPressed: () {
-                        //2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37
-                        print('界面上传来的哈希值:${this.hashController.text}');
-                        getQueryTxnHashResult(this.hashController.text)
+                        print('界面上传来的哈希值:${this.txnHashController.text}');
+                        getQueryTxnHashResult(this.txnHashController.text)
                             .then((res) {
                           String r;
                           if (res == null) {
@@ -161,13 +165,12 @@ class _TransferComponentState extends State<TransferComponent> {
                             if (res.successInfo != null) {
                               r = '交易完成:height(${res.successInfo.height})/confirm(${res.successInfo.confirm})/idx(${res.successInfo.idx})';
                             } else {
-                              r = '正在确认状态:${res.stateInfo}';
+                              r = '[${DateTime.now()}]: ${res.stateInfo}';
                             }
                           }
                           print('$r');
-                          setState(() {
-                            this.queryState = r;
-                          });
+                          this._tranState = r;
+                          _stateModel.updateTranState(this._tranState);
                         });
                       },
                     ),
@@ -251,3 +254,15 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
     );
   }
 }
+
+// class MyApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return new Scaffold(
+//       appBar: AppBar(
+//         title: Text("CircularProgressIndicator"),
+//       ),
+//       body:Center(child: CircularProgressIndicator(),),
+//     );
+//   }
+// }

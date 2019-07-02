@@ -69,7 +69,7 @@ Future<MakeSheetResult> transfer(pay_to, from_uocks) async {
   }
   List<int> orgsheet_bytes = response_sheet.bodyBytes;
   String s = bytesToHexStr(orgsheet_bytes);
-  print('1接收到数据${s.length}---${s}');
+  print('1接收到数据${s.length}---$s');
 
   orgSheet = parseOrgSheet(orgsheet_bytes);
   if (orgSheet == null) {
@@ -324,8 +324,6 @@ List submitInfo(sn) {
   }
 }
 
-// void waitSubmit(List<int> bytes) {}
-
 MakeSheet prepare_txn1_(pay_to, ext_in, submit, scan_count, min_utxo, max_utxo,
     sort_flag, from_uocks) {
   sequence += 1;
@@ -336,44 +334,27 @@ MakeSheet prepare_txn1_(pay_to, ext_in, submit, scan_count, min_utxo, max_utxo,
   );
   pay_from.add(pay_from1);
 
-  List<PayTo> pay_to = List<PayTo>();
-  PayTo pay_to1 = PayTo(
+  List<PayTo> payTo = List<PayTo>();
+  PayTo payTo1 = PayTo(
     value: 1000000, //每次0.01测试
     address: '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o',
   );
-  pay_to.add(pay_to1);
+  payTo.add(payTo1);
 
   MakeSheet sheet = MakeSheet(
       vcn: 56026,
       sequence: sequence,
       pay_from: pay_from,
-      pay_to: pay_to,
+      pay_to: payTo,
       scan_count: scan_count,
       min_utxo: min_utxo,
       max_utxo: max_utxo,
       sort_flag: sort_flag,
       last_uocks: [0]);
-// makesheet.vcn = 56026;
-// makesheet.sequence = sequence;
-// makesheet.pay_from = pay_from;
-// makesheet.pay_to = pay_to;
-// makesheet.scan_count = scan_count;
-// makesheet.min_utxo = min_utxo;
-// makesheet.max_utxo = max_utxo;
-// makesheet.sort_flag = sort_flag;
-// // makesheet.from_uocks = from_uocks;
-// makesheet.last_uocks = [0];
-
   return sheet;
-// return submit_txn_(makesheet, submit);
-}
-
-int submit_txn_(msg, submit) {
-  return 0;
 }
 
 Uint8List decode_check(v) {
-// base58();
   Uint8List a = bs58check.base58.decode(v);
   Uint8List ret = a.sublist(0, a.length - 4);
   Uint8List check = a.sublist(a.length - 4);
