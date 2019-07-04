@@ -13,7 +13,7 @@ class _FindPageState extends State<FindPage> {
     return Scaffold(
         appBar: AppBar(
           title: Text('发现'),
-          backgroundColor: Colors.cyan,
+          // backgroundColor: Colors.cyan,
         ),
         body: Container(
           child: SwiperDiy(

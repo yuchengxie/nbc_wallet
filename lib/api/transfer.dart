@@ -298,7 +298,6 @@ MakeSheetResult getTxnHash(responseTxnBytes) {
       var state = info[2];
       var txnHash = bytesToHexStr(info[3]);
       String lastUocks = bytesToHexStr(info[4][0]);
-      // String last_uocks = info[4][0];
       if (state == 'submited' && txnHash != null) {
         String sDesc = '\nTransaction state:' + state;
         if (lastUocks != '') {

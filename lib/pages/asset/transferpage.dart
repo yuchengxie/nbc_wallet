@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +9,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nbc_wallet/api/managerstate/stateModel.dart';
 import 'package:nbc_wallet/api/model/jsonEntity.dart';
+import 'package:nbc_wallet/api/scripts/opcodes.dart';
 import 'package:nbc_wallet/api/transfer.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +26,7 @@ class _TransferPageState extends State<TransferPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text('NBC-转账'),
-          backgroundColor: Colors.cyan,
+          // backgroundColor: Colors.cyan,
         ),
         body: TransferComponent(),
       ),
@@ -43,6 +46,21 @@ class _TransferComponentState extends State<TransferComponent> {
   TextEditingController txnHashController = TextEditingController();
   TextEditingController lastUockController = TextEditingController();
   String _tranState = '';
+  bool _isDisableButton = true;
+  Timer _timer;
+  bool _isProgerssVisable = true;
+
+  @override
+  void dispose() {
+    super.dispose();
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +69,48 @@ class _TransferComponentState extends State<TransferComponent> {
     amountController.text = '${_stateModel.amount}';
     txnHashController.text = '${_stateModel.txnHash}';
     lastUockController.text = '${_stateModel.lastUock}';
+
+    loopQuery(String txnHash) {
+      if (_timer != null) {
+        _timer.cancel();
+        _timer = null;
+        _isDisableButton = true;
+        return;
+      }
+      _tranState = '准备转帐';
+      _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+        getQueryTxnHashResult(txnHash).then((res) {
+          if (res.status == 1) {
+            //查询状态转账成功,可以停止计时器
+            setState(() {
+              _tranState = _tranState =
+                  '区块高度: ${res.successInfo.height},确认区块: ${res.successInfo.confirm}';
+              if (res.successInfo.confirm == 1) {
+                _timer.cancel();
+                _timer = null;
+                _isProgerssVisable = true;
+                _isDisableButton = true;
+              }
+            });
+          } else {
+            setState(() {
+              _tranState = '${res.stateInfo}' == 'pending' ? '等待区块确认' : '';
+            });
+          }
+        });
+      });
+    }
+
+    _transferAction() {
+      transfer('', '').then((res) {
+        _stateModel.updateTxnHash(res.txnHash);
+        _stateModel.updateLastUock(res.lastUock);
+        _isDisableButton = false;
+        _isProgerssVisable = false;
+        loopQuery(res.txnHash);
+      });
+    }
+
     return Container(
         margin: EdgeInsets.all(16),
         child: Column(
@@ -81,26 +141,33 @@ class _TransferComponentState extends State<TransferComponent> {
                 _stateModel.updateTxnHash(value);
               },
             ),
-            TextFieldOutLine(
-              labelText: '最后uock',
-              maxLines: 1,
-              controller: lastUockController,
-              changed: (value) {
-                _stateModel.updateLastUock(value);
-              },
-            ),
-            Text(
-              this._tranState,
-              textAlign: TextAlign.start,
-              style: TextStyle(fontSize: 14, color: Colors.blue),
+            // TextFieldOutLine(
+            //   labelText: '最后uock',
+            //   maxLines: 1,
+            //   controller: lastUockController,
+            //   changed: (value) {
+            //     _stateModel.updateLastUock(value);
+            //   },
+            // ),
+            // Text(
+            //   this._tranState,
+            //   textAlign: TextAlign.start,
+            //   style: TextStyle(fontSize: 15, color: Colors.grey),
+            // ),
+            SizedBox(
+              height: 20,
             ),
             Offstage(
-              offstage: false,//true隐藏false显示
+              offstage: _isProgerssVisable, //true隐藏false显示
               child: Column(
                 children: <Widget>[
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
+                      Text(
+                        this._tranState,
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
                       Text(
                         '区块确认 1/8',
                       ),
@@ -117,8 +184,37 @@ class _TransferComponentState extends State<TransferComponent> {
                 ],
               ),
             ),
-            SizedBox(
-              height: 300,
+
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.end,
+            //   children: <Widget>[
+            //     IconButton(
+            //       icon: Icon(Icons.navigate_next),
+            //       iconSize: 25.0,
+            //       color: Colors.grey,
+            //       splashColor: Colors.transparent,
+            //       tooltip: '123',
+            //       onPressed: (){
+            //         print('details');
+            //       },
+            //     ),
+            //   ],
+            // ),
+            Row(
+
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                Text('详情'),
+                // SizedBox(width: 5,),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward_ios),
+                  iconSize: 12,
+                  color: Colors.grey,
+                  onPressed: (){
+                    Navigator.pushNamed(context, '/txnDetailsPage');
+                  },
+                ),
+              ],
             ),
             Row(
               children: <Widget>[
@@ -129,50 +225,7 @@ class _TransferComponentState extends State<TransferComponent> {
                       color: Colors.cyan,
                       textColor: Colors.white,
                       child: Text('交 易'),
-                      onPressed: () {
-                        transfer('', '').then((res) {
-                          _stateModel.updateTxnHash(res.txnHash);
-                          _stateModel.updateLastUock(res.lastUock);
-
-                          getQueryTxnHashResult(res.txnHash);
-                        });
-                      },
-                    ),
-                  ),
-                )
-              ],
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Container(
-                    height: 40,
-                    child: RaisedButton(
-                      color: Colors.cyan,
-                      textColor: Colors.white,
-                      child: Text('查 询'),
-                      onPressed: () {
-                        print('界面上传来的哈希值:${this.txnHashController.text}');
-                        getQueryTxnHashResult(this.txnHashController.text)
-                            .then((res) {
-                          String r;
-                          if (res == null) {
-                            r = '哈希错误';
-                          } else {
-                            if (res.successInfo != null) {
-                              r = '交易完成:height(${res.successInfo.height})/confirm(${res.successInfo.confirm})/idx(${res.successInfo.idx})';
-                            } else {
-                              r = '[${DateTime.now()}]: ${res.stateInfo}';
-                            }
-                          }
-                          print('$r');
-                          this._tranState = r;
-                          _stateModel.updateTranState(this._tranState);
-                        });
-                      },
+                      onPressed: _isDisableButton ? _transferAction : null,
                     ),
                   ),
                 )
@@ -188,7 +241,6 @@ class TextFieldOutLine extends StatefulWidget {
   final int maxLines;
   Icon suffix;
   TextEditingController controller;
-  // final String controlText;
   String controllerText;
   final changed;
 
@@ -221,7 +273,6 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
 
   @override
   Widget build(BuildContext context) {
-    // print('c:${this.controller}');
     return Container(
       child: Column(
         children: <Widget>[
@@ -234,19 +285,8 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
               labelText: this.labelText,
               suffix: this.suffix,
             ),
-            // controller: this.controller,
-            // controller: TextEditingController(text: this.controllerText),
-            // onSubmitted: changed,
             controller: this.controller,
             onChanged: changed,
-
-            // onEditingComplete: changed,
-            // onChanged: (v) {
-            //   print('Onchanged v:$v');
-            //   setState(() {
-            //     this.controllerText = v;
-            //   });
-            // },
           ),
           SizedBox(height: 15),
         ],
@@ -254,15 +294,3 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
     );
   }
 }
-
-// class MyApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return new Scaffold(
-//       appBar: AppBar(
-//         title: Text("CircularProgressIndicator"),
-//       ),
-//       body:Center(child: CircularProgressIndicator(),),
-//     );
-//   }
-// }

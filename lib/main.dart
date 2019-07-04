@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nbc_wallet/api/managerstate/stateModel.dart';
 import 'package:nbc_wallet/pages/tabs.dart';
-import 'pages/asset/recordpage.dart';
-import 'pages/asset/transferpage.dart';
 import 'route.dart';
 import 'package:provider/provider.dart';
 
@@ -15,6 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // StateModel _stateModel=Provider.of<StateModel>(context);
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(builder: (_) => StateModel()),
@@ -26,10 +25,12 @@ class MyApp extends StatelessWidget {
             home: Tabs(),
             initialRoute: '/',
             onGenerateRoute: onGenerateRoute,
-            // theme: ThemeData(
-            //   primarySwatch: Colors.cyan,
-            //   primaryColor:Colors.white
-            // ),
+            theme: ThemeData(
+              brightness: stateModel.walletTheme.brightness,
+              appBarTheme: AppBarTheme(
+                color:stateModel.walletTheme.appBarbackColor,
+              ),
+            ),
           );
         },
       ),

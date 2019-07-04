@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:nbc_wallet/pages/asset/recordpage.dart';
 import 'package:nbc_wallet/pages/asset/transferpage.dart';
+import 'package:nbc_wallet/pages/asset/txndeatails.dart';
 import 'package:nbc_wallet/pages/tabs.dart';
 
 final _routes = {
   '/': (context) => Tabs(),
   '/assetRecordPage':(context)=>AssetRecordPage(),
   '/transferPage':(context)=>TransferPage(),
+  '/txnDetailsPage':(context)=>TxnDetailsPage(),
 };
 
 var onGenerateRoute = (RouteSettings settings) {
