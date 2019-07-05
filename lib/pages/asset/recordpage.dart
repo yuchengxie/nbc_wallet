@@ -11,7 +11,10 @@ class _AssetRecordPageState extends State<AssetRecordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('NBC'), backgroundColor: Colors.cyan),
+      appBar: AppBar(
+        title: Text('NBC'),
+        // backgroundColor: Colors.cyan
+      ),
       body: BottomButton(),
     );
   }
@@ -49,7 +52,9 @@ class BottomButton extends StatelessWidget {
                   textColor: Colors.white,
                   label: Text('收款'),
                   icon: Icon(Icons.whatshot),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/qrcode');
+                  },
                 ),
               ),
             ),

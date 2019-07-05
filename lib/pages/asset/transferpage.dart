@@ -1,8 +1,16 @@
+import 'dart:async';
+import 'dart:developer';
+import 'dart:io';
+import 'dart:isolate';
+
+// import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
-import 'package:nbc_wallet/api/model/jsonEntity.dart';
+import 'package:flutter/widgets.dart';
+import 'package:nbc_wallet/api/managerstate/stateModel.dart';
 import 'package:nbc_wallet/api/transfer.dart';
+import 'package:provider/provider.dart';
 
 class TransferPage extends StatefulWidget {
   TransferPage({Key key}) : super(key: key);
@@ -11,15 +19,49 @@ class TransferPage extends StatefulWidget {
 }
 
 class _TransferPageState extends State<TransferPage> {
+
+  Future scan() async {
+    // try {
+    //   String barcode = await BarcodeScanner.scan();
+    //   setState(() {
+    //     return this.barcode = barcode;
+    //   });
+    // } on PlatformException catch (e) {
+    //   if (e.code == BarcodeScanner.CameraAccessDenied) {
+    //     setState(() {
+    //       return this.barcode = 'The user did not grant the camera permission!';
+    //     });
+    //   } else {
+    //     setState(() {
+    //       return this.barcode = 'Unknown error: $e';
+    //     });
+    //   }
+    // } on FormatException{
+    //   setState(() => this.barcode = 'null (User returned using the "back"-button before scanning anything. Result)');
+    // } catch (e) {
+    //   setState(() => this.barcode = 'Unknown error: $e');
+    // }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       child: Scaffold(
         appBar: AppBar(
           title: Text('NBC-转账'),
-          backgroundColor: Colors.cyan,
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.camera_alt),
+              onPressed: (){
+                // print('camera');
+                Navigator.pushNamed(context, '/scanfcode');
+                 //String barcode = await BarcodeScanner.scan();
+              },
+            )
+          ],
         ),
         body: TransferComponent(),
+        
       ),
     );
   }
@@ -34,86 +76,204 @@ class TransferComponent extends StatefulWidget {
 class _TransferComponentState extends State<TransferComponent> {
   TextEditingController addrController = TextEditingController();
   TextEditingController amountController = TextEditingController();
-  TextEditingController hashController = TextEditingController();
-  TextEditingController lastUockController=TextEditingController();
-  String queryState = '';
+  TextEditingController txnHashController = TextEditingController();
+  TextEditingController lastUockController = TextEditingController();
+  String _tranState = '';
+  bool _isDisableButton = true;
+  Timer _timer;
+  bool _isProgerssVisable = true;
+
+  @override
+  void dispose() {
+    super.dispose();
+    _timer?.cancel();
+    _timer = null;
+  }
 
   @override
   void initState() {
-    // TODO: implement initState
-    // super.initState();
-    addrController.text =
-        '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o';
-    amountController.text = '1';
-    hashController.text =
-        '2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37';
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final _stateModel = Provider.of<StateModel>(context);
+    addrController.text = '${_stateModel.recvAddr}';
+    amountController.text = '${_stateModel.amount}';
+    txnHashController.text = '${_stateModel.txnHash}';
+    lastUockController.text = '${_stateModel.lastUock}';
+
+    loopQuery(String txnHash) {
+      if (_timer != null) {
+        _timer.cancel();
+        _timer = null;
+        _isDisableButton = true;
+        return;
+      }
+      _tranState = '准备转帐';
+      _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+        getQueryTxnHashResult(txnHash).then((res) {
+          if (res.status == 1) {
+            //查询状态转账成功,可以停止计时器
+            setState(() {
+              _tranState = _tranState =
+                  '区块高度: ${res.successInfo.height},确认区块: ${res.successInfo.confirm}';
+              if (res.successInfo.confirm == 1) {
+                _timer.cancel();
+                _timer = null;
+                _isProgerssVisable = true;
+                _isDisableButton = true;
+              }
+            });
+          } else {
+            setState(() {
+              _tranState = '${res.stateInfo}' == 'pending' ? '等待区块确认' : '';
+            });
+          }
+        });
+      });
+    }
+
+    _transferAction() {
+      transfer('', '').then((res) {
+        _stateModel.updateTxnHash(res.txnHash);
+        _stateModel.updateLastUock(res.lastUock);
+        _isDisableButton = false;
+        _isProgerssVisable = false;
+        loopQuery(res.txnHash);
+      });
+    }
+
     return Container(
         margin: EdgeInsets.all(16),
         child: Column(
           children: <Widget>[
+            TextField(
+              maxLength: 54,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'hahhah',
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.person),
+                  onPressed: () {
+                    print('选择地址');
+                    // showModalBottomSheet(
+                    //     context: context,
+                    //     builder: (BuildContext context) {
+                    //       return Center(
+                    //         // child: Text('123'),
+                    //       );
+                    //     });
+                  },
+                ),
+                border: OutlineInputBorder(),
+                labelText: '收款钱包地址',
+              ),
+              controller: this.addrController,
+            ),
+
+            Divider(
+              height: 20,
+            ),
             SizedBox(
               height: 10,
             ),
             TextFieldOutLine(
               labelText: '收款人的钱包地址',
               maxLines: 2,
-              controller: this.addrController,
+              controller: addrController,
+              changed: (value) {
+                _stateModel.updateAddr(value);
+              },
             ),
             TextFieldOutLine(
               labelText: '转账金额',
-              controller: this.amountController,
+              controller: amountController,
+              changed: (value) {
+                _stateModel.updateAddr(value);
+              },
             ),
             TextFieldOutLine(
               labelText: '交易生成hash',
               maxLines: 2,
-              controller: this.hashController,
-              changed: (v) {
-                print('v:$v');
-                setState(() {
-                  this.hashController.text = v;
-                });
+              controller: txnHashController,
+              changed: (value) {
+                _stateModel.updateTxnHash(value);
               },
             ),
-            TextFieldOutLine(
-              labelText: '最后uock',
-              maxLines: 1,
-              controller: this.lastUockController,
-              changed: (v) {
-                print('v:$v');
-                setState(() {
-                  this.hashController.text = v;
-                });
-              },
+            // TextFieldOutLine(
+            //   labelText: '最后uock',
+            //   maxLines: 1,
+            //   controller: lastUockController,
+            //   changed: (value) {
+            //     _stateModel.updateLastUock(value);
+            //   },
+            // ),
+            // Text(
+            //   this._tranState,
+            //   textAlign: TextAlign.start,
+            //   style: TextStyle(fontSize: 15, color: Colors.grey),
+            // ),
+            SizedBox(
+              height: 20,
             ),
-            Text(
-              this.queryState,
-              textAlign: TextAlign.start,
-              style: TextStyle(fontSize: 14, color: Colors.blue),
+            Offstage(
+              offstage: _isProgerssVisable, //true隐藏false显示
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        this._tranState,
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      Text(
+                        '区块确认 1/8',
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 3,
+                    child: LinearProgressIndicator(
+                      backgroundColor: Colors.grey,
+                      value: 0.6,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                    ),
+                  ),
+                ],
+              ),
             ),
+
             // Row(
+            //   mainAxisAlignment: MainAxisAlignment.end,
             //   children: <Widget>[
-            //     Text(
-            //       this.queryState,
-            //       style: TextStyle(
-            //         fontSize: 16,
-            //         color: Colors.blue
-            //       ),
+            //     IconButton(
+            //       icon: Icon(Icons.navigate_next),
+            //       iconSize: 25.0,
+            //       color: Colors.grey,
+            //       splashColor: Colors.transparent,
+            //       tooltip: '123',
+            //       onPressed: (){
+            //         print('details');
+            //       },
             //     ),
             //   ],
             // ),
-            // SizedBox(
-            //   height: 10,
-            // ),
-            // TextFieldOutLine(
-            //   labelText: '备注',
-            //   maxLines: 3,
-            // ),
-            SizedBox(
-              height: 200,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                Text('详情'),
+                // SizedBox(width: 5,),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward_ios),
+                  iconSize: 12,
+                  color: Colors.grey,
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/txnDetailsPage');
+                  },
+                ),
+              ],
             ),
             Row(
               children: <Widget>[
@@ -124,52 +284,7 @@ class _TransferComponentState extends State<TransferComponent> {
                       color: Colors.cyan,
                       textColor: Colors.white,
                       child: Text('交 易'),
-                      onPressed: () {
-                        transfer('', '').then((res) {
-                          setState(() {
-                            this.hashController.text = res.txnHash;
-                            this.lastUockController.text=res.lastUock;
-                          });
-                        });
-                      },
-                    ),
-                  ),
-                )
-              ],
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Container(
-                    height: 40,
-                    child: RaisedButton(
-                      color: Colors.cyan,
-                      textColor: Colors.white,
-                      child: Text('查 询'),
-                      onPressed: () {
-                        //2a70905f28f2cb8ef6f9a4d1a055709df733fd5cf350a8038a973cd409f74f37
-                        print('界面上传来的哈希值:${this.hashController.text}');
-                        getQueryTxnHashResult(this.hashController.text)
-                            .then((res) {
-                          String r;
-                          if (res == null) {
-                            r = '哈希错误';
-                          } else {
-                            if (res.successInfo != null) {
-                              r = '交易完成:height(${res.successInfo.height})/confirm(${res.successInfo.confirm})/idx(${res.successInfo.idx})';
-                            } else {
-                              r = '正在确认状态:${res.stateInfo}';
-                            }
-                          }
-                          print('$r');
-                          setState(() {
-                            this.queryState = r;
-                          });
-                        });
-                      },
+                      onPressed: _isDisableButton ? _transferAction : null,
                     ),
                   ),
                 )
@@ -185,7 +300,6 @@ class TextFieldOutLine extends StatefulWidget {
   final int maxLines;
   Icon suffix;
   TextEditingController controller;
-  // final String controlText;
   String controllerText;
   final changed;
 
@@ -218,7 +332,6 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
 
   @override
   Widget build(BuildContext context) {
-    // print('c:${this.controller}');
     return Container(
       child: Column(
         children: <Widget>[
@@ -231,19 +344,8 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
               labelText: this.labelText,
               suffix: this.suffix,
             ),
-            // controller: this.controller,
-            // controller: TextEditingController(text: this.controllerText),
-            // onSubmitted: changed,
             controller: this.controller,
             onChanged: changed,
-
-            // onEditingComplete: changed,
-            // onChanged: (v) {
-            //   print('Onchanged v:$v');
-            //   setState(() {
-            //     this.controllerText = v;
-            //   });
-            // },
           ),
           SizedBox(height: 15),
         ],
@@ -251,3 +353,6 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
     );
   }
 }
+
+ 
+

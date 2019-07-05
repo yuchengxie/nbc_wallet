@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:nbc_wallet/api/managerstate/stateModel.dart';
+import 'package:provider/provider.dart';
 
 // 数据源
 List<String> titleItems = <String>[
@@ -93,8 +95,10 @@ class AssetPage extends StatefulWidget {
 }
 
 class _AssetPageState extends State<AssetPage> {
+  //测试
   @override
   Widget build(BuildContext context) {
+    StateModel _stateModel=Provider.of<StateModel>(context);
     List<Widget> _list = new List();
     for (int i = 0; i < titleItems.length; i++) {
       _list.add(buildListData(
@@ -110,9 +114,13 @@ class _AssetPageState extends State<AssetPage> {
       children: <Widget>[
         Container(
           height: 300,
-          color: Colors.cyan,
           child: Row(
-              // children: <Widget>[],
+              children: <Widget>[
+                Expanded(
+                  child:Image.network('https://www.itying.com/images/flutter/6.png',
+                  fit: BoxFit.cover,)
+                )
+              ],
               ),
         ),
         ListTileCoin(),

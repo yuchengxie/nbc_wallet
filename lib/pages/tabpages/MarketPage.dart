@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class MarketPage extends StatelessWidget {
@@ -7,7 +6,10 @@ class MarketPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('行情'),backgroundColor: Colors.cyan,),
+      appBar: AppBar(
+        title: Text('行情'),
+        // backgroundColor: Colors.cyan,
+      ),
     );
   }
 }
