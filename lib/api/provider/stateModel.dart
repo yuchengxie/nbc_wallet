@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class StateModel with ChangeNotifier {
+  // String _recvAddr = '';
   String _recvAddr = '1118hfRMRrJMgSCoV9ztyPcjcgcMZ1zThvqRDLUw3xCYkZwwTAbJ5o';
   double _amount = 0.01;
   String _txnHash = '';

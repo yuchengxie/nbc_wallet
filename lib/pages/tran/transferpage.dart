@@ -1,5 +1,5 @@
 import 'dart:async';
-// import 'package:barcode_scan/barcode_scan.dart';
+import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
@@ -7,6 +7,13 @@ import 'package:flutter/widgets.dart';
 import 'package:nbc_wallet/api/provider/stateModel.dart';
 import 'package:nbc_wallet/api/transfer.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+
+TextEditingController addrController = TextEditingController();
+TextEditingController amountController = TextEditingController();
+TextEditingController txnHashController = TextEditingController();
+TextEditingController lastUockController = TextEditingController();
+StateModel _stateModel;
 
 class TransferPage extends StatefulWidget {
   TransferPage({Key key}) : super(key: key);
@@ -15,32 +22,38 @@ class TransferPage extends StatefulWidget {
 }
 
 class _TransferPageState extends State<TransferPage> {
-
   Future scan() async {
-    // try {
-    //   String barcode = await BarcodeScanner.scan();
-    //   setState(() {
-    //     return this.barcode = barcode;
-    //   });
-    // } on PlatformException catch (e) {
-    //   if (e.code == BarcodeScanner.CameraAccessDenied) {
-    //     setState(() {
-    //       return this.barcode = 'The user did not grant the camera permission!';
-    //     });
-    //   } else {
-    //     setState(() {
-    //       return this.barcode = 'Unknown error: $e';
-    //     });
-    //   }
-    // } on FormatException{
-    //   setState(() => this.barcode = 'null (User returned using the "back"-button before scanning anything. Result)');
-    // } catch (e) {
-    //   setState(() => this.barcode = 'Unknown error: $e');
-    // }
+    try {
+      String barcode = await BarcodeScanner.scan();
+      setState(() {
+        // return this.barcode = barcode;
+        print('barcode: $barcode');
+        addrController.text=barcode;
+        _stateModel.updateAddr(barcode);
+      });
+    } on PlatformException catch (e) {
+      if (e.code == BarcodeScanner.CameraAccessDenied) {
+        print('barcode:null');
+        setState(() {
+          // return this.barcode = 'The user did not grant the camera permission!';
+        });
+      } else {
+        print('barcode:null');
+        setState(() {
+          // return this.barcode = 'Unknown error: $e';
+        });
+      }
+    } on FormatException {
+      // setState(() => this.barcode =
+      //     'null (User returned using the "back"-button before scanning anything. Result)');
+    } catch (e) {
+      // setState(() => this.barcode = 'Unknown error: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    _stateModel = Provider.of<StateModel>(context);
     return Container(
       child: Scaffold(
         appBar: AppBar(
@@ -48,16 +61,14 @@ class _TransferPageState extends State<TransferPage> {
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.camera_alt),
-              onPressed: (){
-                // print('camera');
-                Navigator.pushNamed(context, '/scanfcode');
-                 //String barcode = await BarcodeScanner.scan();
+              onPressed: () {
+                //扫描二维码
+                scan();
               },
             )
           ],
         ),
         body: TransferComponent(),
-        
       ),
     );
   }
@@ -70,10 +81,6 @@ class TransferComponent extends StatefulWidget {
 }
 
 class _TransferComponentState extends State<TransferComponent> {
-  TextEditingController addrController = TextEditingController();
-  TextEditingController amountController = TextEditingController();
-  TextEditingController txnHashController = TextEditingController();
-  TextEditingController lastUockController = TextEditingController();
   String _tranState = '';
   bool _isDisableButton = true;
   Timer _timer;
@@ -93,7 +100,6 @@ class _TransferComponentState extends State<TransferComponent> {
 
   @override
   Widget build(BuildContext context) {
-    final _stateModel = Provider.of<StateModel>(context);
     addrController.text = '${_stateModel.recvAddr}';
     amountController.text = '${_stateModel.amount}';
     txnHashController.text = '${_stateModel.txnHash}';
@@ -144,14 +150,16 @@ class _TransferComponentState extends State<TransferComponent> {
         margin: EdgeInsets.all(16),
         child: Column(
           children: <Widget>[
+            SizedBox(height: 10,),
             TextField(
               maxLength: 54,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: 'hahhah',
                 suffixIcon: IconButton(
                   icon: Icon(Icons.person),
                   onPressed: () {
+                    addrController.clear();
+                    _stateModel.updateAddr('');
                     print('选择地址');
                     // showModalBottomSheet(
                     //     context: context,
@@ -165,22 +173,14 @@ class _TransferComponentState extends State<TransferComponent> {
                 border: OutlineInputBorder(),
                 labelText: '收款钱包地址',
               ),
-              controller: this.addrController,
-            ),
-
-            Divider(
-              height: 20,
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            TextFieldOutLine(
-              labelText: '收款人的钱包地址',
-              maxLines: 2,
               controller: addrController,
-              changed: (value) {
+              onChanged: (value){
                 _stateModel.updateAddr(value);
               },
+            ),
+
+            SizedBox(
+              height: 10,
             ),
             TextFieldOutLine(
               labelText: '转账金额',
@@ -349,6 +349,3 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
     );
   }
 }
-
- 
-

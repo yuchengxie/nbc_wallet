@@ -12,7 +12,7 @@ class _QRCodePageState extends State<QRCodePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('QRCode'),
+          title: Text('我的收款码'),
         ),
         body: Center(
           child: QrImage(

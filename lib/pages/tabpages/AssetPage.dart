@@ -64,7 +64,6 @@ class _AssetPageState extends State<AssetPage> {
               ),
         ),
         ListTileCoin(),
-        // ListTileCoin(),
       ],
     ));
   }
