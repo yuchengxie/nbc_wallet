@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:nbc_wallet/pages/asset/qrcode.dart';
-import 'package:nbc_wallet/pages/asset/recordpage.dart';
-import 'package:nbc_wallet/pages/asset/scanfcode.dart';
-import 'package:nbc_wallet/pages/asset/transferpage.dart';
-import 'package:nbc_wallet/pages/asset/txndeatails.dart';
+import 'package:nbc_wallet/pages/tran/qrcode.dart';
+import 'package:nbc_wallet/pages/tran/recordpage.dart';
+import 'package:nbc_wallet/pages/tran/scanfcode.dart';
+import 'package:nbc_wallet/pages/tran/transferpage.dart';
+import 'package:nbc_wallet/pages/tran/txndeatails.dart';
 import 'package:nbc_wallet/pages/tabs.dart';
 
 final _routes = {
