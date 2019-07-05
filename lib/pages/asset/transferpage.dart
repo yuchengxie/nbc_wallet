@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nbc_wallet/api/managerstate/stateModel.dart';
-import 'package:nbc_wallet/api/model/jsonEntity.dart';
-import 'package:nbc_wallet/api/scripts/opcodes.dart';
 import 'package:nbc_wallet/api/transfer.dart';
 import 'package:provider/provider.dart';
 
@@ -26,9 +24,18 @@ class _TransferPageState extends State<TransferPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text('NBC-转账'),
-          // backgroundColor: Colors.cyan,
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.camera_alt),
+              onPressed: (){
+                // print('camera');
+                Navigator.pushNamed(context, '/scanfcode');
+              },
+            )
+          ],
         ),
         body: TransferComponent(),
+        
       ),
     );
   }
@@ -115,6 +122,33 @@ class _TransferComponentState extends State<TransferComponent> {
         margin: EdgeInsets.all(16),
         child: Column(
           children: <Widget>[
+            TextField(
+              maxLength: 54,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'hahhah',
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.person),
+                  onPressed: () {
+                    print('选择地址');
+                    // showModalBottomSheet(
+                    //     context: context,
+                    //     builder: (BuildContext context) {
+                    //       return Center(
+                    //         // child: Text('123'),
+                    //       );
+                    //     });
+                  },
+                ),
+                border: OutlineInputBorder(),
+                labelText: '收款钱包地址',
+              ),
+              controller: this.addrController,
+            ),
+
+            Divider(
+              height: 20,
+            ),
             SizedBox(
               height: 10,
             ),
@@ -201,7 +235,6 @@ class _TransferComponentState extends State<TransferComponent> {
             //   ],
             // ),
             Row(
-
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 Text('详情'),
@@ -210,7 +243,7 @@ class _TransferComponentState extends State<TransferComponent> {
                   icon: Icon(Icons.arrow_forward_ios),
                   iconSize: 12,
                   color: Colors.grey,
-                  onPressed: (){
+                  onPressed: () {
                     Navigator.pushNamed(context, '/txnDetailsPage');
                   },
                 ),
@@ -294,3 +327,6 @@ class _TextFieldOutLineState extends State<TextFieldOutLine> {
     );
   }
 }
+
+ 
+

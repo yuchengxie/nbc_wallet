@@ -52,7 +52,9 @@ class BottomButton extends StatelessWidget {
                   textColor: Colors.white,
                   label: Text('收款'),
                   icon: Icon(Icons.whatshot),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/qrcode');
+                  },
                 ),
               ),
             ),

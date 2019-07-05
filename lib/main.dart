@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
             theme: ThemeData(
               brightness: stateModel.walletTheme.brightness,
               appBarTheme: AppBarTheme(
-                color:stateModel.walletTheme.appBarbackColor,
+                color: stateModel.walletTheme.appBarbackColor,
               ),
             ),
           );

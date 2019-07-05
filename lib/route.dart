@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:nbc_wallet/pages/asset/qrcode.dart';
 import 'package:nbc_wallet/pages/asset/recordpage.dart';
+import 'package:nbc_wallet/pages/asset/scanfcode.dart';
 import 'package:nbc_wallet/pages/asset/transferpage.dart';
 import 'package:nbc_wallet/pages/asset/txndeatails.dart';
 import 'package:nbc_wallet/pages/tabs.dart';
 
 final _routes = {
   '/': (context) => Tabs(),
-  '/assetRecordPage':(context)=>AssetRecordPage(),
-  '/transferPage':(context)=>TransferPage(),
-  '/txnDetailsPage':(context)=>TxnDetailsPage(),
+  '/assetRecordPage': (context) => AssetRecordPage(),
+  '/transferPage': (context) => TransferPage(),
+  '/txnDetailsPage': (context) => TxnDetailsPage(),
+  '/qrcode': (context) => QRCodePage(),
+  '/scanfcode':(context)=>ScanfCodePage(),
 };
 
 var onGenerateRoute = (RouteSettings settings) {
