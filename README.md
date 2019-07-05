@@ -15,12 +15,14 @@ For help getting started with Flutter, view our
 [online documentation](https://flutter.dev/docs), which offers tutorials, 
 samples, guidance on mobile development, and a full API reference.
 
+git clean -f
+
 QRCode Solution:
 #1.info.plist
   <key>NSCameraUsageDescription</key>
 	<string>Camera permission is required for barcode scanning.</string>
 #2.pod "MTBBarcodeScanner"
-#3.write code :
+#3.code :
 		    [self.scanner startScanningWithResultBlock:^(NSArray<AVMetadataMachineReadableCodeObject *> *codes) {
         [self.scanner stopScanning];
         AVMetadataMachineReadableCodeObject *code =codes.firstObject;

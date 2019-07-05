@@ -1,14 +1,10 @@
 import 'dart:async';
-import 'dart:developer';
-import 'dart:io';
-import 'dart:isolate';
-
 // import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/widgets.dart';
-import 'package:nbc_wallet/api/managerstate/stateModel.dart';
+import 'package:nbc_wallet/api/provider/stateModel.dart';
 import 'package:nbc_wallet/api/transfer.dart';
 import 'package:provider/provider.dart';
 

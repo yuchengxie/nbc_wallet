@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nbc_wallet/api/managerstate/stateModel.dart';
+import 'package:nbc_wallet/api/provider/stateModel.dart';
 import 'package:nbc_wallet/pages/tabs.dart';
 import 'route.dart';
 import 'package:provider/provider.dart';

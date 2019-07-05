@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../api/managerstate/stateModel.dart';
+import '../../api/provider/stateModel.dart';
 
 class PersonalPage extends StatelessWidget {
   const PersonalPage({Key key}) : super(key: key);
