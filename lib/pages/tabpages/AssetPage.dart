@@ -47,7 +47,7 @@ class _AssetPageState extends State<AssetPage> {
   //测试
   @override
   Widget build(BuildContext context) {
-    StateModel _stateModel=Provider.of<StateModel>(context);
+    // StateModel _stateModel=Provider.of<StateModel>(context);
     return Scaffold(
       appBar: AppBar(title: Text('资产'),),
         body: Column(

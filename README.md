@@ -17,7 +17,7 @@ samples, guidance on mobile development, and a full API reference.
 
 git clean -f
 
-QRCode Solution:
+#QRCode Solution:
 #1.info.plist
   <key>NSCameraUsageDescription</key>
 	<string>Camera permission is required for barcode scanning.</string>
@@ -32,3 +32,7 @@ QRCode Solution:
         }
     }];
 
+# Cocopods Solution
+pod repo remove master
+pod setup
+pod install

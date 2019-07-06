@@ -13,7 +13,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // StateModel _stateModel=Provider.of<StateModel>(context);
+    // return MultiProvider(
+    //   providers: [
+    //     // Provider<>
+    //   ],
+    //   child: MaterialApp(
+    //     home: Tab(),
+    //     initialRoute: '/',
+    //     // onGenerateRoute: onGenerateRoute,
+    //   ),
+    // );
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(builder: (_) => StateModel()),
@@ -37,16 +46,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({Key key}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-
-//     // return MaterialApp(
-//     //   initialRoute: '/',
-//     //   onGenerateRoute: onGenerateRoute,
-//     // );
-//   }
-// }
